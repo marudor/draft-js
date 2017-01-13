@@ -154,6 +154,7 @@ describe('DraftPasteProcessor', function() {
     var {contentBlocks: output} = DraftPasteProcessor.processHTML(html, CUSTOM_BLOCK_MAP);
     assertBlockTypes(output, [
       'header-one',
+      'header-one',
       'unstyled',
       'header-two',
     ]);
@@ -450,8 +451,9 @@ describe('DraftPasteProcessor', function() {
       'unordered-list-item',
       'ordered-list-item',
       'ordered-list-item',
+      'ordered-list-item',
       'unordered-list-item',
     ]);
-    assertDepths(output, [0, 0, 0, 1, 1, 0]);
+    assertDepths(output, [0, 0, 0, 1, 1, 1, 0]);
   });
 });

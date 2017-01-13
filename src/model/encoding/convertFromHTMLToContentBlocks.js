@@ -128,6 +128,7 @@ function getSoftNewlineChunk(): Chunk {
     inlines: [OrderedSet()],
     entities: new Array(1),
     blocks: [],
+    isNewline: true,
   };
 }
 
@@ -267,16 +268,19 @@ function processInlineTag(
   return currentStyle;
 }
 
-function joinChunks(A: Chunk, B: Chunk): Chunk {
+function joinChunks(A, B) {
   // Sometimes two blocks will touch in the DOM and we need to strip the
   // extra delimiter to preserve niceness.
-  var lastInA = A.text.slice(-1);
-  var firstInB = B.text.slice(0, 1);
+  const firstInB = B.text.slice(0, 1);
+  const lastInA = A.text.slice(-1);
 
-  if (
-    lastInA === '\r' &&
-    firstInB === '\r'
-  ) {
+  const adjacentDividers = lastInA === '\r' && firstInB === '\r';
+  // when joining two full blocks like this we want to pop one divider
+  const isJoiningBlocks = A.text !== '\r' && B.text !== '\r';
+  // when joining a newline to an empty block we want to remove the newline
+  const addingNewlineToEmptyBlock = (A.text === '\r' && !A.isNewline) && B.isNewline;
+
+  if (adjacentDividers && (isJoiningBlocks || addingNewlineToEmptyBlock)) {
     A.text = A.text.slice(0, -1);
     A.inlines.pop();
     A.entities.pop();
@@ -285,7 +289,7 @@ function joinChunks(A: Chunk, B: Chunk): Chunk {
 
   // Kill whitespace after blocks
   if (
-    lastInA === '\r'
+    A.text.slice(-1) === '\r'
   ) {
     if (B.text === SPACE || B.text === '\n') {
       return A;
@@ -296,11 +300,14 @@ function joinChunks(A: Chunk, B: Chunk): Chunk {
     }
   }
 
+  const isNewline = A.text.length === 0 && B.isNewline;
+
   return {
     text: A.text + B.text,
     inlines: A.inlines.concat(B.inlines),
     entities: A.entities.concat(B.entities),
     blocks: A.blocks.concat(B.blocks),
+    isNewline,
   };
 }
 
